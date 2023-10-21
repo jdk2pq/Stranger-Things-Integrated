@@ -3,6 +3,7 @@ import os
 import random
 import time
 from threading import Thread
+import logging
 
 from rpi_ws281x import *
 
@@ -12,17 +13,53 @@ LED_COUNT = 50
 GPIO_PIN = 10
 LED_FREQ_HZ = 800000
 LED_DMA = 5
-LED_BRIGHTNESS = 127
+LED_BRIGHTNESS = 15
 LED_INVERT = False
+LED_CHANNEL = 0
+LED_STRIP = ws.WS2811_STRIP_RGB  # Strip type and colour ordering
 
-CHAR_IDX = {'A': 0, 'B': 2, 'C': 3, 'D': 5, 'E': 7, 'F': 9, 'G': 11, 'H': 13, 'I': 32, 'J': 30, 'K': 28, 'L': 27,
-            'M': 25, 'N': 23, 'O': 21, 'P': 19, 'Q': 18, 'R': 36, 'S': 37, 'T': 39, 'U': 40, 'V': 42, 'W': 44, 'X': 46,
-            'Y': 48, 'Z': 49, ' ': "NONE", '!': "FLASH", '*': "CREEP"}
+build_iter = 1
 
-strip = Adafruit_NeoPixel(LED_COUNT, GPIO_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+CHAR_IDX = {
+    'A': 48,
+    'B': 47,
+    'C': 45,
+    'D': 43,
+    'E': 42,
+    'F': 40,
+    'G': 39,
+    'H': 37,
+    'I': 20,
+    'J': 22,
+    'K': 24,
+    'L': 25,
+    'M': 26,
+    'N': 27,
+    'O': 29,
+    'P': 31,
+    'Q': 33,
+    'R': 14,
+    'S': 13,
+    'T': 12,
+    'U': 10,
+    'V': 9,
+    'W': 7,
+    'X': 5,
+    'Y': 3,
+    'Z': 1,
+    ' ': "NONE",
+    '!': "FLASH",
+    '*': "CREEP",
+    '@': "ALPHABET"
+}
+
+strip = Adafruit_NeoPixel(LED_COUNT, GPIO_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, LED_STRIP)
 strip.begin()
 strip.show()
-
+cancelled = False
+level = logging.DEBUG
+logging.basicConfig()
+logging.getLogger().setLevel(level)
 
 def rand_color():
     return color_of(random.random())
@@ -71,6 +108,20 @@ def creep(start=0, n=50):
         strip.show()
         time.sleep(1)
 
+def clear_all():
+    set_all((0, 0, 0))
+    strip.show()
+
+def test_all():
+    clear_all()
+    for i in range(0, 50):
+        print("setting color for {}".format(i))
+        set_color(i, (0, 0, 0))
+        time.sleep(1)
+        set_color(i, (255, 0, 0))
+        strip.show()
+        time.sleep(2)
+        set_color(i, (0, 0, 0))
 
 def flash(n):
     for i in range(0, n):
@@ -87,22 +138,25 @@ displaying = False
 def display(msg):
     global displaying
     displaying = True
+    time.sleep(1)
     for c in msg:
+        clear_all()
         set_all((0, 0, 0))
         if c.upper() in CHAR_IDX:
             i = CHAR_IDX[c.upper()]
             if i == "NONE":
                 "do nothing"
             elif i == "FLASH":
-                flash(5)
+                flash(3)
             elif i == "CREEP":
                 creep(50)
+            elif i == "ALPHABET":
+                alphabet()
             else:
                 set_color(i, color_of(i))
             strip.show()
             time.sleep(1)
-            set_all((0, 0, 0))
-            strip.show()
+            clear_all()
             time.sleep(.2)
     time.sleep(1)
     displaying = False
@@ -138,6 +192,17 @@ def clear_errors():
             set_all((0, 0, 0))
             strip.show()
         time.sleep(2)
+
+# borrowed from https://github.com/jgarff/rpi_ws281x/blob/master/python/examples/strandtest.py
+def color_wipe(color, wait_ms=800):
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, color)
+        strip.show()
+        time.sleep(wait_ms / 1000.0)
+
+
+def alphabet():
+    display("abcdefghijklmnopqrstuvwxyz")
 
 
 def start_client():
