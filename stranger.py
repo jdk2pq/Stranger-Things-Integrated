@@ -10,7 +10,7 @@ from rpi_ws281x import *
 from messages import messages
 
 LED_COUNT = 50
-GPIO_PIN = 10
+GPIO_PIN = 18
 LED_FREQ_HZ = 800000
 LED_DMA = 5
 LED_BRIGHTNESS = 15
@@ -108,6 +108,24 @@ def creep(start=0, n=50):
         strip.show()
         time.sleep(1)
 
+def build():
+    global build_iter
+    clear_all()
+    strip.show()
+    if build_iter % 2 == 0:
+        num_list = range(LED_COUNT, -1, -1)
+    else:
+        num_list = range(0, LED_COUNT)
+    for i in num_list:
+        if displaying:
+            break
+        else:
+            new_color = rand_color()
+            strip.setPixelColorRGB(i, new_color[0], new_color[1], new_color[2])
+            strip.show()
+            time.sleep(.3)
+    build_iter += 1
+
 def clear_all():
     set_all((0, 0, 0))
     strip.show()
@@ -189,8 +207,8 @@ def clear_errors():
     global displaying
     while True:
         if not displaying:
-            set_all((0, 0, 0))
-            strip.show()
+            clear_all()
+            build()
         time.sleep(2)
 
 # borrowed from https://github.com/jgarff/rpi_ws281x/blob/master/python/examples/strandtest.py
