@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 import stranger
 
-import connexion
+# import connexion
 from gevent.pywsgi import WSGIServer
 from flask import Flask, request
-from twilio import twiml
 from messages import messages
-
+from twilio.twiml.messaging_response import MessagingResponse
 
 app = Flask(__name__)
 
-@app.route('/sms', methods=['POST'])
-def sms():
+@app.route("/sms", methods=['GET', 'POST'])
+def sms_reply():
+    """Respond to incoming calls with a simple text message."""
     message_body = request.form['Body']
-    resp = twiml.Response()
-    resp.message('Your message has been sent to the Upside Down')
+    # Start our TwiML response
+    resp = MessagingResponse()
+
+    # Add a message
+    resp.message('Your message has been sent to the Upside Down...')
     messages.add_message(message_body)
     return str(resp)
 
